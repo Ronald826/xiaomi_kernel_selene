@@ -385,6 +385,7 @@ HOST_LOADLIBES := $(HOST_LFS_LIBS)
 CPP		= $(CC) -E
 ifneq ($(LLVM),)
 CC		= clang
+DIS		= llvm-dis
 LD		= ld.lld
 AR		= llvm-ar
 NM		= llvm-nm
@@ -714,8 +715,46 @@ KBUILD_CFLAGS	+= $(call cc-disable-warning, array-compare)
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS   += -Os
 else
-KBUILD_CFLAGS   += -O3
+KBUILD_CFLAGS   += -O3 -fno-signed-zeros -fassociative-math -fno-trapping-math -freciprocal-math -fno-math-errno
 endif
+
+ifeq ($(cc-name),clang)
+# Add Some optimization flags for clang
+KBUILD_CFLAGS	+= -mcpu=cortex-a53 \
+-pipe \
+-ffunction-sections \
+-ffp-model=fast -foptimize-sibling-calls
+
+# Enable Clang Polly optimizations
+KBUILD_CFLAGS	+= -mllvm -polly \
+                   -mllvm -polly-use-runtime-alias-checks \
+                   -mllvm -polly-detect-track-failures \
+                   -mllvm -polly-optimized-scops \
+                   -mllvm -polly-import-jscop-dir \
+                   -mllvm -polly-run-export-jscop \
+                   -mllvm -polly-use-llvm-names \
+                   -mllvm -polly-omp-backend=LLVM \
+                   -mllvm -polly-delicm-max-ops=0 \
+                   -mllvm -polly-2nd-level-tiling \
+                   -mllvm -polly-position=early \
+                   -mllvm -polly-position=before-vectorizer \
+                   -mllvm -polly-num-threads=8 \
+                   -mllvm -polly-scheduling=dynamic \
+                   -mllvm -polly-scheduling-chunksize=1 \
+                   -mllvm -polly-vectorizer=polly \
+                   -mllvm -polly-opt-maximize-bands=yes \
+                   -mllvm -polly-ast-use-context \
+                   -mllvm -polly-detect-keep-going \
+		   -mllvm -polly-invariant-load-hoisting \
+		   -mllvm -polly-run-dce \
+		   -mllvm -polly-run-inliner \
+		   -mllvm -polly-vectorizer=stripmine \
+		   -mllvm -polly-opt-simplify-deps=no \
+		   -mllvm -polly-rtc-max-arrays-per-group=40 \
+		   -mllvm -polly-parallel \
+			 -mllvm -polly-ast-detect-parallel
+                          #-mllvm -polly-no-early-exit
+endif                          
 
 # Tell gcc to never replace conditional load with a non-conditional one
 KBUILD_CFLAGS	+= $(call cc-option,--param=allow-store-data-races=0)
