@@ -16,3 +16,7 @@ See Documentation/00-INDEX for a list of what is contained in each file.
 Please read the Documentation/process/changes.rst file, as it contains the
 requirements for building and running the kernel, and information about
 the problems which may result by upgrading your kernel.
+
+
+This kernel is special for the device, Redmi 10/10 Prime/10 2022 (Selene)
+May not work on other devices especially devices running outside of the Mt6768 platform.
