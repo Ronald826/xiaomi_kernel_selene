@@ -375,7 +375,7 @@ else
 HOSTCC	= gcc
 HOSTCXX	= g++
 endif
-HOSTCFLAGS   := -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 \
+HOSTCFLAGS   := -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 \
 		-fomit-frame-pointer -std=gnu89 $(HOST_LFS_CFLAGS)
 HOSTCXXFLAGS := -O2 $(HOST_LFS_CFLAGS)
 HOSTLDFLAGS  := $(HOST_LFS_LDFLAGS)
@@ -715,9 +715,12 @@ KBUILD_CFLAGS	+= $(call cc-disable-warning, array-compare)
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS   += -Os
 else
-KBUILD_CFLAGS   += -O3 -fno-signed-zeros -fassociative-math -fno-trapping-math -freciprocal-math -fno-math-errno
+KBUILD_CFLAGS   += -O3 -fno-signed-zeros -fno-trapping-math -fassociative-math -freciprocal-math -funsafe-math-optimizations -fvectorize
 endif
 
+ifeq ($(cc-name),gcc)
+KBUILD_CFLAGS	+= -mcpu=cortex-a75.cortex-a55 -mtune=cortex-a75.cortex-a55
+endif
 ifeq ($(cc-name),clang)
 # Add Some optimization flags for clang
 KBUILD_CFLAGS	+= -mcpu=cortex-a55 \
@@ -1030,15 +1033,6 @@ KBUILD_CFLAGS   += $(call cc-option,-Werror=incompatible-pointer-types)
 
 # Require designated initializers for all marked structures
 KBUILD_CFLAGS   += $(call cc-option,-Werror=designated-init)
-
-# Neutron-clang is built with the latest sources of LLVM and Clang.
-# In these latest releases, -Wint-conversion is now defined as an error.
-# To stop the toolchain from halting the compilation process, you need to
-# default -Wint-conversion to be a warning not an error.
-#
-# (Codebase is not yet updated to the compatibility of the latest release.)
-# refer to: https://reviews.llvm.org/D129881
-KBUILD_CFLAGS += $(call cc-option,-Wno-int-conversion)
 
 # change __FILE__ to the relative path from the srctree
 KBUILD_CFLAGS	+= $(call cc-option,-fmacro-prefix-map=$(srctree)/=)
